@@ -1,0 +1,138 @@
+## Configurable volumes
+##
+## Runs a two-container pod with volumes defined in a config map and a secret
+## mounted in the filesystem.
+## 
+## The two containers share two emptyDirs mounted in RW mode.
+## This second steps ensure mounting volumes does not depend on the order of 
+## volumeMounts list.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vol-config-{{ uuid }}
+  namespace: {{ namespace }}
+data:
+  config-map-script.py: |
+    print ("hello configurable world")
+
+    with open("/shared-vol1/config", "w") as f:
+      print ("hello configurable world", file=f)
+
+    with open("/shared-vol2/config", "w") as f:
+      print ("hello configurable world", file=f)
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-{{ uuid }}
+  namespace: {{ namespace }}
+type: Opaque
+stringData:
+  secret-script.py: |
+    print ("hello secret world")
+    
+    with open("/shared-vol1/secret", "w") as f:
+      print ("hello configurable world", file=f)
+
+    with open("/shared-vol2/secret", "w") as f:
+      print ("hello configurable world", file=f)
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: python-vol-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  containers:
+    - name: config
+      imagePullPolicy: Always
+      image: python:alpine
+      command: ["python", "/config-map/config-map-script.py"]
+      volumeMounts:
+        - name: shared-vol1
+          mountPath: /shared-vol1
+        - name: config-map
+          mountPath: /config-map
+        - name: shared-vol2
+          mountPath: /shared-vol2
+
+    - name: secret
+      imagePullPolicy: Always
+      image: python:alpine
+      command: ["python", "/secrets/secret-script.py"]
+      volumeMounts:
+        - name: shared-vol1
+          mountPath: /shared-vol1
+        - name: secret
+          mountPath: /secrets
+        - name: shared-vol2
+          mountPath: /shared-vol2
+
+    
+  volumes:
+    - name: config-map
+      configMap:
+        name: vol-config-{{ uuid }}
+        items:
+          - key: config-map-script.py
+            path: config-map-script.py
+    - name: secret
+      secret:
+        secretName: secret-{{ uuid }}
+        items:
+          - key: secret-script.py
+            path: secret-script.py
+    - name: shared-vol1
+      emptyDir:
+        sizeLimit: 50Mi
+    - name: shared-vol2
+      emptyDir:
+        sizeLimit: 50Mi
+    
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 10
+check_pods: 
+  - name: python-vol-{{ uuid }}
+    namespace: {{ namespace }}
+
+check_logs: 
+  - name: python-vol-{{ uuid }}
+    namespace: {{ namespace }}
+    container: config
+    regex: hello configurable world
+    operator: Exists
+
+  - name: python-vol-{{ uuid }}
+    namespace: {{ namespace }}
+    container: secret
+    regex: hello secret world
+    operator: Exists
+
+clean_configs:
+  - type: pod
+    name: python-vol-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: onSuccess
+
+  - type: config_map
+    name: vol-config-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+

@@ -1,0 +1,115 @@
+## Python environment
+##
+## Simple python script to test setting environment variables in three ways:
+##  * by value
+##  * from a ConfigMap
+##  * from a Secret
+## 
+## The outcome is validated looking for the values of the set env vars in the pod log
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config-{{ uuid }}
+  namespace: {{ namespace }}
+data:
+  fromConfigMap: hello configurable world
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env-secret-{{ uuid }}
+  namespace: {{ namespace }}
+type: Opaque
+stringData:
+  fromSecret: hello secret world
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: python-env-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  containers:
+  - name: python
+    image: python:alpine
+    command: ["python", "-c"]
+    args:
+      - |
+        import os
+        for var in ('SIMPLE', 'FROM_CONFIG_MAP', 'FROM_SECRET'):
+            print (var, os.environ.get(var))
+
+    env:
+      - name: SIMPLE
+        value: simple
+
+      - name: FROM_CONFIG_MAP
+        valueFrom:
+          configMapKeyRef:
+            name: env-config-{{ uuid }}
+            key: fromConfigMap
+
+      - name: FROM_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: env-secret-{{ uuid }}
+            key: fromSecret
+
+    imagePullPolicy: Always
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 10
+check_pods: 
+  - name: python-env-{{ uuid }}
+    namespace: {{ namespace }}
+
+check_logs: 
+  - name: python-env-{{ uuid }}
+    namespace: {{ namespace }}
+    regex: SIMPLE simple
+    operator: Exists
+
+  - name: python-env-{{ uuid }}
+    namespace: {{ namespace }}
+    regex: FROM_CONFIG_MAP hello configurable world
+    operator: Exists
+
+  - name: python-env-{{ uuid }}
+    namespace: {{ namespace }}
+    regex: FROM_SECRET hello secret world
+    operator: Exists
+
+clean_configs:
+  - type: pod
+    name: python-env-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+  - type: config_map
+    name: env-config-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+  - type: secret
+    name: env-secret-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+
+
+

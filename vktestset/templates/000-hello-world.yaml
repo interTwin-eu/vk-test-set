@@ -1,0 +1,57 @@
+## Hello world
+##
+## First simple test to ensure the communication is open and a simple
+## echo command can be executed.
+## Launches a pod printing "hello world" in the log.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-world-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  containers:
+  - name: hello-world
+    image: ghcr.io/grycap/cowsay 
+    command: ["/bin/bash", "-c"]
+    args: ["echo hello world"]
+    imagePullPolicy: Always
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 10
+check_pods: 
+  - name: hello-world-{{ uuid }}
+    namespace: {{ namespace }}
+
+check_logs: 
+  - name: hello-world-{{ uuid }}
+    namespace: {{ namespace }}
+    container: hello-world
+    regex: hello world
+    operator: Exists
+      
+#  - name: hello-world-{{ uuid }}
+#    namespace: {{ namespace }}
+#    regex: hello (\w+)
+#    operator: Is
+#    value: world
+
+clean_configs:
+  - type: pod
+    name: hello-world-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+
+

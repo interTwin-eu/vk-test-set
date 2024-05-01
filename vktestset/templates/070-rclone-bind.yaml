@@ -1,0 +1,165 @@
+## rclone bind
+##
+## Deploy three containers (server, client, worker) initialized by a fourth container (key-gen).
+## `server` provides an SFTP endpoint on port 22 
+## `client` uses rclone to mount via SFTP the data provided by `server` in a shared emptyDir
+## `worker` access the `server` data via the shared emptyDir, and writes there a `touchedfile`
+##
+## This convoluted test is used to ensure the bidirectional data transfer provided by
+## kubernetes is also available on a remote node.
+##
+## The result is validated by letting the `worker` write a file in the shared area and 
+## checking it appears in the `server` filesystem.
+##
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rclone-bind-{{ uuid }}
+  namespace: {{ namespace }}
+data:
+  rclone.conf: |
+    [remote]
+    type = sftp
+    host = localhost
+    user = sftp
+    key_file = /root/.ssh/id_rsa
+    disable_hashcheck = true 
+    set_modtime = false
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rclone-bind-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  initContainers:
+    - name: key-gen
+      imagePullPolicy: Always
+      image: landerlini/vktestset-rclone-bind:latest
+      command: ["/bin/bash", "-c"]
+      args: 
+        - |
+          mkdir -p /root/.ssh
+          ssh-keygen -f /root/.ssh/id_rsa -t rsa -q -N ""
+
+      volumeMounts:
+        - name: home
+          mountPath: /root
+      
+  containers:
+    - name: server
+      imagePullPolicy: Always
+      image: landerlini/vktestset-rclone-bind:latest
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          useradd -m sftp 
+          mkdir /home/sftp/.ssh
+          cat /root/.ssh/id_rsa.pub > /home/sftp/.ssh/authorized_keys
+          chown sftp /home/sftp/.ssh/authorized_keys
+
+          service ssh start
+
+          sleep 20;
+          for i in `seq 30`;
+          do
+            sleep 1;
+            ls /home/sftp/;
+          done
+
+      volumeMounts:
+        - name: home
+          mountPath: /root
+
+    - name: client
+      imagePullPolicy: Always
+      image: landerlini/vktestset-rclone-bind:latest
+      securityContext:
+        privileged: true
+
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          sleep 10
+
+          mkdir  -p /root/.config/rclone/
+          cat /root/config/rclone/rclone.conf > /root/.config/rclone/rclone.conf
+
+          mkdir /shared/rclone
+          rclone mount -vv remote:/home/sftp/ /shared/rclone 
+          
+      volumeMounts:
+        - name: home
+          mountPath: /root
+        - name: rclone-config
+          mountPath: /root/config/rclone
+        - name: shared-{{ uuid }}
+          mountPath: /shared
+          mountPropagation: Bidirectional
+
+    - name: worker
+      imagePullPolicy: Always
+      image: landerlini/vktestset-rclone-bind:latest
+      securityContext:
+        privileged: true
+
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          sleep 20;
+          touch /shared/rclone/touchedfile
+
+      volumeMounts:
+        - name: shared-{{ uuid }}
+          mountPath: /shared
+          mountPropagation: Bidirectional
+
+  volumes:
+    - name: home
+      emptyDir:
+        sizeLimit: 500Mi
+    - name: shared-{{ uuid }}
+      emptyDir:
+        sizeLimit: 500Mi
+    - name: rclone-config
+      configMap:
+        name: rclone-bind-{{ uuid }}
+        items:
+          - key: rclone.conf
+            path: rclone.conf
+            
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 60
+check_pods: 
+  - name: rclone-bind-{{ uuid }}
+    namespace: {{ namespace }}
+    status: Running
+
+check_logs: 
+  - name: rclone-bind-{{ uuid }}
+    namespace: {{ namespace }}
+    container: server
+    regex: touchedfile
+    operator: Exists
+
+clean_configs:
+  - type: pod
+    name: rclone-bind-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+

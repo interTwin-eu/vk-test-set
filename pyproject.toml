@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "vktestset"
+description = "A set of Kubernetes manifests wrapped in pytest to validate interlink sidecars"
+readme = "README.md"
+
+authors = [
+  {name = "Lucio Anderlini", email = "Lucio.Anderlini@fi.infn.it"},
+  {name = "Giulio Bianchini", email = "Giulio.Bianchini@pg.infn.it"},
+  ]
+
+license = {text = "MIT"}
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+  ]
+
+
+version = "0.0"
+
+dependencies = ["kubernetes", "pytest", "jinja2", "pydantic"]
+
+[tool.setuptools.package-data]
+myModule = ["*.yaml"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/landerlini/vk-test-set"
+"Source" = "https://github.com/landerlini/vk-test-set"

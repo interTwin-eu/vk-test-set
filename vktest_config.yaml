@@ -1,0 +1,22 @@
+target_nodes: 
+  - vk-hub-test-agent-1
+
+required_namespaces:
+  - default
+  - kube-system
+  - interlink4
+
+values:
+  namespace: interlink4
+
+  annotations: 
+    slurm-job.knoc.io/flags: "--job-name=test-pod-cfg -t 2800  --ntasks=8 --nodes=1 --mem-per-cpu=2000"
+
+  tolerations:
+    - key: virtual-node.interlink/no-schedule
+      operator: Exists
+      effect: NoSchedule
+    - key: accelerator
+      operator: Exists
+      effect: NoSchedule
+

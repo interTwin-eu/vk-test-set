@@ -1,0 +1,66 @@
+## Simple Python
+##
+## Simple single-container job using multi-line definition of the arguments
+## to stress the aspects related to character escaping and formatting.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-python-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  containers:
+  - name: simple-python
+    image: python:alpine
+    command: ["python", "-c"]
+    args:
+      - |
+        print ("Some special characters, @ò!\"£$%&/()=?^é*ç°§")
+        print ("Some unicode, 🤩")
+        
+        # Real code starts here:
+        a = 1
+        b = 2
+        c = a + b
+        print (f"a + b = {a} + {b} = {c} = c")
+        print ('Completed')
+
+    imagePullPolicy: Always
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 10
+check_pods: 
+  - name: simple-python-{{ uuid }}
+    namespace: {{ namespace }}
+
+check_logs: 
+  - name: simple-python-{{ uuid }}
+    namespace: {{ namespace }}
+    regex: Completed
+    operator: Exists
+#  - name: hello-world-{{ uuid }}
+#    namespace: {{ namespace }}
+#    regex: hello (\w+)
+#    operator: Is
+#    value: world
+
+clean_configs:
+  - type: pod
+    name: simple-python-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
+
+
+

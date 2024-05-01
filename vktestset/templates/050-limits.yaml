@@ -1,0 +1,68 @@
+## Testing limits
+##
+## Launches a job requiring 2Gi of memory setting a limit for 100Mi, 
+## to challenge the kubelet capability of applying memory limits to the 
+## containers. 
+## 
+## NOTICE. This test validates the ability of the serverless engine to
+## kill a pod: the test is successful if the pod gets killed; the test
+## fails if the job gets completed.
+##
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: limits-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+  containers:
+  - name: allocate-big
+    image: python:alpine
+    command: ["/bin/sh", "-c"]
+    args: 
+      - |
+        python3 -m pip install numpy
+
+        cat<<EOF >>script.py
+        import numpy as np;
+        from time import sleep
+        a = np.random.uniform(0, 1, 1<<28)
+        print (a.sum())
+        sleep(10)
+        EOF
+      
+        python3 script.py
+
+    resources:
+      limits: 
+        memory: 100Mi
+
+        
+    imagePullPolicy: Always
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 100
+check_pods: 
+  - name: limits-{{ uuid }}
+    namespace: {{ namespace }}
+    status: Failed
+
+clean_configs:
+  - type: pod
+    name: limits-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: never
+
+
+

@@ -1,0 +1,73 @@
+## Init container
+##
+## Populates a shared volume with a git repository.
+##
+## The result is validated looking for the string README in the result
+## returned by `ls <repository>`.  
+##
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-git-{{ uuid }}
+  namespace: {{ namespace }}
+  annotations: {{ annotations | tojson }}
+
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    kubernetes.io/hostname: {{ target_node }}
+
+
+  initContainers:
+    - name: init-git-puller
+      imagePullPolicy: Always
+      image: bitnami/git
+      command: 
+        - git
+        - clone
+        - https://github.com/interTwin-eu/interLink
+        - /interlink
+
+      volumeMounts:
+        - name: interlink-repo
+          mountPath: /interlink
+      
+  containers:
+    - name: lister
+      imagePullPolicy: Always
+      image: busybox:latest
+      command: ["ls", "/interlink/"]
+      volumeMounts:
+        - name: interlink-repo
+          mountPath: /interlink
+
+  volumes:
+    - name: interlink-repo
+      emptyDir:
+        sizeLimit: 500Mi
+    
+    
+  dnsPolicy: ClusterFirst
+
+  tolerations: {{ tolerations | tojson }}
+
+################################################################################
+# VALIDATION
+timeout_seconds: 25
+check_pods: 
+  - name: init-git-{{ uuid }}
+    namespace: {{ namespace }}
+
+check_logs: 
+  - name: init-git-{{ uuid }}
+    namespace: {{ namespace }}
+    regex: README
+    operator: Exists
+
+clean_configs:
+  - type: pod
+    name: init-git-{{ uuid }}
+    namespace: {{ namespace }}
+    condition: always
+
