@@ -24,7 +24,7 @@ classifiers = [
 
 version = "0.0"
 
-dependencies = ["kubernetes", "pytest", "jinja2", "pydantic"]
+dependencies = ["kubernetes", "pytest", "jinja2", "pydantic", "jsonschema2md"]
 
 [tool.setuptools.package-data]
 myModule = ["*.yaml"]

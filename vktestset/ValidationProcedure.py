@@ -58,9 +58,12 @@ RegexOperator = Literal[
     
 
 class CheckPod(BaseModel, extra='forbid'):
-    name: str
-    namespace: str
-    status: PodStatus = 'Succeeded'
+    """
+    Describe a test on the status of a pod or of its containers.
+    """
+    name: str = Field(description="Name of the Pod")
+    namespace: str = Field(description="Namespace where the Pod is defined")
+    status: PodStatus = Field('Succeeded', description="Status of the pod for the test to succeed")
 
     def execute(self, k8s):
         pod = k8s.read_namespaced_pod(name=self.name, namespace=self.namespace)
@@ -71,14 +74,29 @@ class CheckPod(BaseModel, extra='forbid'):
 
 
 class CheckLogs(BaseModel, extra='forbid'):
-    name: str
-    namespace: str
-    regex: str
-    operator: RegexOperator = 'Exists'
-    container: Optional[str] = None
-    value: Optional[Union[str, int]] = None
+    """
+    Descrive a test on the logs.
+    """
+    name:       str = Field(description="Name of the Pod")
+    namespace:  str = Field(description="Namespace where the Pod is defined")
+    regex:      str = Field(description="Regular expression to be applied to the log")
+    operator:   RegexOperator = Field(
+                    default='Exists', 
+                    description="Operation to be applied on the output of the regular expression",
+                    )
+    container:  Optional[str] = Field(
+                    default=None, 
+                    description="Name of the container. Mandatory for multi-container pods.",
+                    )
+    value:      Optional[Union[str, int]] = Field(
+                    default=None,
+                    description="Value to check the result of the regex agains. Optional for `Exists` operator.",
+                    )
 
     def execute(self, k8s):    
+        """
+        Perform the test.
+        """
         log = k8s.read_namespaced_pod_log(self.name, self.namespace, container=self.container)
         matches = re.findall(self.regex, log)
         print (matches)
@@ -94,12 +112,27 @@ class CheckLogs(BaseModel, extra='forbid'):
 
 
 class CleanConfig(BaseModel, extra='forbid'):
-    type: Cleanable
-    name: str
-    namespace: Optional[str] = None
-    condition: CleanupCondition = 'always'
+    """
+    Define the procedure to clean up things once the test is over.
+    """
+    type:       Cleanable = Field(
+                    description="Kubernetes object to delete as part of the clean-up.",
+                )
+    name:       str = Field(
+                    description="Name of the pod.",
+                )
+    namespace:  str = Field(
+                    description="Namespace where to look for the pod.",
+                )
+    condition:  CleanupCondition = Field(
+                    default='always',
+                    description="Condition upon which",
+                )
 
     def execute(self, k8s, succeeded: bool):
+        """
+        Perform the test.
+        """
         clean_after_success = succeeded and self.condition in ['always', 'onSuccess']
         clean_after_failure = not succeeded and self.condition in ['always', 'onFailure']
 
@@ -111,19 +144,40 @@ class CleanConfig(BaseModel, extra='forbid'):
 
 
 class ValidationProcedure(BaseModel, extra='forbid'):
-    timeout_seconds: float = 60.
-    clean_configs: List[CleanConfig] = Field([])
-    check_pods: List[CheckPod] = Field([])
-    check_logs: List[CheckLogs] = Field([])
+    """
+    Defines the procedure to evaluate whether a test is successful.
+    """
+    timeout_seconds:    float = Field(
+                            default=60.,
+                            description="Defines a timeout to declare a not successful test failed.",
+                        ),
+    clean_configs:      List[CleanConfig] = Field(
+                            default=[],
+                            description="List of operation defining the clean-up procedure.",
+                        )
+    check_pods:         List[CheckPod] = Field(
+                            default=[],
+                            description="List of checks on the pod status.",
+                        )
+    check_logs:         List[CheckLogs] = Field(
+                            default=[],
+                            description="List of checks on the logs of pods.",
+                        )
 
     @staticmethod
     def from_dict(dictionary: Optional[Mapping[str, Any]] = None):
+        """
+        Parse a dictionary to produce a ValidationProcedure object.
+        """
         if dictionary is None:
             return ValidationProcedure()
         
         return ValidationProcedure(**dictionary)
 
     def execute(self):
+        """
+        Perform the tests.
+        """
         start_time = datetime.now()
         succeeded = False
         try:
@@ -152,4 +206,17 @@ class ValidationProcedure(BaseModel, extra='forbid'):
 
 
     
+
+if __name__ == '__main__':
+    import jsonschema2md
+
+    json_schema = ValidationProcedure.model_json_schema()
+
+    parser = jsonschema2md.Parser(
+        examples_as_yaml=False,
+        show_examples="all",
+    )
+
+    md_lines = parser.parse_schema(json_schema)
+    print(''.join(md_lines))
 
