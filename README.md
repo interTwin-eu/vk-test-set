@@ -1,4 +1,4 @@
-# Virtual Kubelet Test Set
+# Virtual Kubelet Test Set 🥚🔨
 
 The *Virtual Kubelet Test Set* provides a simple templated infrastructure
 to collect, run and report functionality tests for Virtual Kubelet providers.
@@ -103,6 +103,19 @@ clean_configs:
     condition: always
 
 ```
+
+## Configuring the templates
+
+## Validation structure
+
+## Relevant environment variables
+ * `KUBECONFIG`
+ * `VKTEST_CONFIG`
+
+## Running the tests
+### Test order is important
+
+## Develop new tests (CONTRIBUTING)
 
 
 
