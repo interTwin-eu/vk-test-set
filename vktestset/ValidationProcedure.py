@@ -97,7 +97,12 @@ class CheckLogs(BaseModel, extra='forbid'):
         """
         Perform the test.
         """
-        log = k8s.read_namespaced_pod_log(self.name, self.namespace, container=self.container)
+        log = k8s.read_namespaced_pod_log(
+            self.name, 
+            self.namespace, 
+            container=self.container,
+            insecure_skip_tls_verify_backend=True,
+            )
         matches = re.findall(self.regex, log)
         print (matches)
         if self.operator in ['Exists'] and len(matches) <= 0: 
