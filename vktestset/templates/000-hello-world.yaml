@@ -51,7 +51,7 @@ clean_configs:
   - type: pod
     name: hello-world-{{ uuid }}
     namespace: {{ namespace }}
-    condition: always
+    condition: onSuccess
 
 
 

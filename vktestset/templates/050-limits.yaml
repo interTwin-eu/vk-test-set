@@ -62,7 +62,7 @@ clean_configs:
   - type: pod
     name: limits-{{ uuid }}
     namespace: {{ namespace }}
-    condition: never
+    condition: onSuccess
 
 
 
