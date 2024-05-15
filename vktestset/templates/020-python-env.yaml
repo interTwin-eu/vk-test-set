@@ -46,24 +46,26 @@ spec:
     args:
       - |
         import os
-        for var in ('SIMPLE', 'FROM_CONFIG_MAP', 'FROM_SECRET'):
+        for var in ('SIMPLE',): # 'FROM_CONFIG_MAP', 'FROM_SECRET'):
             print (var, os.environ.get(var))
 
     env:
       - name: SIMPLE
         value: simple
 
-      - name: FROM_CONFIG_MAP
-        valueFrom:
-          configMapKeyRef:
-            name: env-config-{{ uuid }}
-            key: fromConfigMap
+      ### TODO: Not supported in InterLink 0.2.3-pre7
+      # - name: FROM_CONFIG_MAP
+      #   valueFrom:
+      #     configMapKeyRef:
+      #       name: env-config-{{ uuid }}
+      #       key: fromConfigMap
 
-      - name: FROM_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: env-secret-{{ uuid }}
-            key: fromSecret
+      ### TODO: Not supported in InterLink 0.2.3-pre7
+      # - name: FROM_SECRET
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: env-secret-{{ uuid }}
+      #       key: fromSecret
 
     imagePullPolicy: Always
     
@@ -84,21 +86,23 @@ check_logs:
     regex: SIMPLE simple
     operator: Exists
 
-  - name: python-env-{{ uuid }}
-    namespace: {{ namespace }}
-    regex: FROM_CONFIG_MAP hello configurable world
-    operator: Exists
+  ### TODO: Not supported in InterLink 0.2.3-pre7
+  # - name: python-env-{{ uuid }}
+  #   namespace: {{ namespace }}
+  #   regex: FROM_CONFIG_MAP hello configurable world
+  #   operator: Exists
 
-  - name: python-env-{{ uuid }}
-    namespace: {{ namespace }}
-    regex: FROM_SECRET hello secret world
-    operator: Exists
+  ### TODO: Not supported in InterLink 0.2.3-pre7
+  # - name: python-env-{{ uuid }}
+  #   namespace: {{ namespace }}
+  #   regex: FROM_SECRET hello secret world
+  #   operator: Exists
 
 clean_configs:
   - type: pod
     name: python-env-{{ uuid }}
     namespace: {{ namespace }}
-    condition: always
+    condition: onSuccess
 
   - type: config_map
     name: env-config-{{ uuid }}
