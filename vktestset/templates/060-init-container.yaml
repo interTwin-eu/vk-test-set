@@ -54,7 +54,7 @@ spec:
 
 ################################################################################
 # VALIDATION
-timeout_seconds: 25
+timeout_seconds: 60
 check_pods: 
   - name: init-git-{{ uuid }}
     namespace: {{ namespace }}

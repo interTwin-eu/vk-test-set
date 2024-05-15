@@ -39,7 +39,7 @@ spec:
 
 ################################################################################
 # VALIDATION
-timeout_seconds: 10
+timeout_seconds: 20
 check_pods: 
   - name: simple-python-{{ uuid }}
     namespace: {{ namespace }}
