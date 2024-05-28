@@ -129,7 +129,7 @@ values:
   namespace: interlink4
 
   annotations: 
-    slurm-job.knoc.io/flags: "--job-name=test-pod-cfg -t 2800  --ntasks=8 --nodes=1 --mem-per-cpu=2000"
+    slurm-job.vk.io/flags: "--job-name=test-pod-cfg -t 2800  --ntasks=8 --nodes=1 --mem-per-cpu=2000"
 
   tolerations:
     - key: virtual-node.interlink/no-schedule
