@@ -59,5 +59,5 @@ def test_manifest(node, template):
             f.seek(0)
             create_from_yaml(k8s, f.name)
   
-    validation.execute()     
+    validation.execute(timeout_multiplier=cfg.timeout_multiplierr)     
 
