@@ -12,6 +12,7 @@ TemplateKey = Literal[
 class ConfigManager (BaseModel, extra='forbid'):
    required_namespaces: List[str] = Field([])
    target_nodes: List[str] = Field([])
+   timeout_multiplier: float = 1.
    values: Dict[TemplateKey, Any]
 
    @staticmethod

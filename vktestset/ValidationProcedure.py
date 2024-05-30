@@ -179,14 +179,15 @@ class ValidationProcedure(BaseModel, extra='forbid'):
         
         return ValidationProcedure(**dictionary)
 
-    def execute(self):
+    def execute(self, timeout_multiplier: float = 1.):
         """
         Perform the tests.
         """
         start_time = datetime.now()
         succeeded = False
         try:
-            while (datetime.now() - start_time).total_seconds() < self.timeout_seconds:
+            timeout = timeout_multiplier * self.timeout_seconds
+            while (datetime.now() - start_time).total_seconds() < timeout:
                 try:
                     with kubernetes_api() as k8s:
                         for check_pod in self.check_pods:

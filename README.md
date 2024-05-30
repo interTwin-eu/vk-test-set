@@ -112,6 +112,8 @@ default `vktest_config.yaml`.
 The fields of the configuration file are:
  * `target_nodes` (*list of strings*), the Kubernetes names of the target nodes to be tested
  * `required_namespaces` (*optional list of strings*), a list of namespace that should exist before other tests are run
+ * `timeout_multiplier` (*optional float*), a multiplier for all the timeouts of the test. 
+   It can be increased for unattended testing or lowered during debug with cached images on the remote target.
  * `values` (*dictionary*) a dictionary of values passed *as-is* to the jinja2 template
 
 An example of configuration is reported below.
@@ -124,6 +126,8 @@ required_namespaces:
   - default
   - kube-system
   - interlink4
+
+timeout_multiplier: 1.
 
 values:
   namespace: interlink4
