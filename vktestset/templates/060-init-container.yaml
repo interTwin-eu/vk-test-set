@@ -23,12 +23,10 @@ spec:
     - name: init-git-puller
       imagePullPolicy: Always
       image: bitnami/git
-      command: 
-        - git
-        - clone
-        - https://github.com/interTwin-eu/interLink
-        - /interlink
-
+      command:
+        - bash
+        - -c
+        - "git config --global --unset http.proxy && git config --global --unset https.proxy && git clone https://github.com/interTwin-eu/interLink /interlink"
       volumeMounts:
         - name: interlink-repo
           mountPath: /interlink
