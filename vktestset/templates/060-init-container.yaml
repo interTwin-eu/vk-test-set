@@ -26,7 +26,7 @@ spec:
       command:
         - bash
         - -c
-        - "git config --global --unset http.proxy && git config --global --unset https.proxy && git clone https://github.com/interTwin-eu/interLink /interlink"
+        - "curl -Lo interlink.tar.gz https://github.com/interTwin-eu/interLink/archive/refs/tags/0.2.3-rc1.tar.gz && tar xzvf interlink.tar.gz && mv interLink-0.2.3-rc1 /interlink"
       volumeMounts:
         - name: interlink-repo
           mountPath: /interlink
