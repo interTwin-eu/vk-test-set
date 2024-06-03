@@ -24,10 +24,10 @@ spec:
       imagePullPolicy: Always
       image: bitnami/git
       command:
-        - bash
-      args:
-        - -c
-        - "\"curl -Lo interlink.tar.gz https://github.com/interTwin-eu/interLink/archive/refs/tags/0.2.3-rc1.tar.gz && tar xzvf interlink.tar.gz && mv interLink-0.2.3-rc1 /interlink\""
+        - git
+        - clone
+        - https://github.com/interTwin-eu/interLink
+        - /interlink
       volumeMounts:
         - name: interlink-repo
           mountPath: /interlink
