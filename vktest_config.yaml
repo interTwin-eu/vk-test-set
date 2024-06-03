@@ -1,10 +1,15 @@
 target_nodes: 
   - vk-hub-test-agent-1
+  - kueue-node
 
 required_namespaces:
   - default
   - kube-system
   - interlink4
+  - interlink-v
+  - interlink-k
+
+timeout_multiplier: 1
 
 values:
   namespace: interlink4
