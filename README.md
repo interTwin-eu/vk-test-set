@@ -6,7 +6,6 @@ It is being developed in the context of the Proof-of-Concept on the adoption
 of the [InterLink](https://github.com/interTwin-eu/interLink) abstractions 
 to serverless containers to ease the validation of the various backends.
 
-
 [InterLink](https://github.com/interTwin-eu/interLink) is a toolset to
 provide an abstraction for the execution of a Kubernetes pod on any remote 
 resource capable of managing a Container execution lifecycle.
