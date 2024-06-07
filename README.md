@@ -166,7 +166,6 @@ See the auto-generated documentation in [ValidationProcedure.md](./ValidationPro
  * `VKTEST_CONFIG` points to the configuration file of the tests, defaults to 
    `vktest_config.yaml`.
 
-
 ## Running the tests
 
 Make sure you have an active kubectl connection to the cluster where the virtual node 
